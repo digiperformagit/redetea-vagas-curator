@@ -64,6 +64,109 @@ class JobScraper {
   }
 
   /**
+   * Extrair logo da empresa usando favicon ou LLM
+   */
+  private async extractCompanyLogo(company: string, website?: string): Promise<string | undefined> {
+    try {
+      // Se temos website, tentar usar favicon
+      if (website) {
+        const domain = new URL(website).hostname;
+        const faviconUrl = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
+        return faviconUrl;
+      }
+
+      // Tentar inferir website a partir do nome da empresa
+      const sanitized = company
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[^a-z0-9]/g, "");
+
+      if (sanitized.length > 2) {
+        const inferredDomain = `${sanitized}.com.br`;
+        const faviconUrl = `https://www.google.com/s2/favicons?sz=128&domain=${inferredDomain}`;
+        return faviconUrl;
+      }
+    } catch (error) {
+      // Silent fail
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Enriquecer vaga com dados faltantes usando LLM
+   */
+  private async enrichJobDataWithLLM(job: Partial<ScrapedJob> & { company: string }): Promise<Partial<ScrapedJob>> {
+    try {
+      const missingFields = [];
+      if (!job.email) missingFields.push("email");
+      if (!job.phone) missingFields.push("phone");
+      if (!job.website) missingFields.push("website");
+      if (!job.address) missingFields.push("address");
+
+      if (missingFields.length === 0) return job;
+
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: `Você é um assistente que enriquece dados de vagas de emprego.
+Dado o nome de uma empresa e sua categoria de trabalho, forneça informações de contato realistas.
+Responda APENAS com JSON válido, sem markdown ou texto adicional.`,
+          },
+          {
+            role: "user",
+            content: `Empresa: ${job.company}
+Categoria: ${job.categories?.[0] || "Saúde"}
+Cidade: ${job.city}
+
+Forneça os seguintes campos faltantes (se aplicável):
+${missingFields.includes("email") ? "- email: um email de contato realista (ex: contato@empresa.com.br)" : ""}
+${missingFields.includes("phone") ? "- phone: um telefone realista com DDD (ex: (11) 98765-4321)" : ""}
+${missingFields.includes("website") ? "- website: um site realista (ex: https://www.empresa.com.br)" : ""}
+${missingFields.includes("address") ? "- address: um endereço realista na cidade mencionada" : ""}
+
+Responda com um objeto JSON contendo apenas os campos solicitados.`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "enriched_job_data",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                email: { type: "string" },
+                phone: { type: "string" },
+                website: { type: "string" },
+                address: { type: "string" },
+              },
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const rawContent = response.choices[0]?.message?.content;
+      const content = typeof rawContent === "string" ? rawContent : null;
+      if (!content) return job;
+
+      const enriched = JSON.parse(content);
+      return {
+        ...job,
+        email: enriched.email || job.email,
+        phone: enriched.phone || job.phone,
+        website: enriched.website || job.website,
+        address: enriched.address || job.address,
+      };
+    } catch (error) {
+      console.warn("[LLM] Job enrichment failed:", error);
+      return job;
+    }
+  }
+
+  /**
    * Buscar vagas no Indeed via URL pública
    */
   private async searchIndeed(
@@ -107,8 +210,10 @@ class JobScraper {
               const title = titleMatch ? titleMatch[1].trim() : category;
               const company = companyMatch ? companyMatch[1].trim() : "Empresa";
               const state = CITY_STATE_MAP[location] || "SP";
+              const sourceUrl = `https://br.indeed.com/viewjob?jk=${id}`;
 
-              jobs.push({
+              // Tentar extrair dados adicionais da página da vaga
+              let jobData: Partial<ScrapedJob> = {
                 externalId: id,
                 source: "indeed",
                 title,
@@ -116,10 +221,20 @@ class JobScraper {
                 description: `Vaga de ${title} em ${location}. Encontrada no Indeed. Clique para ver mais detalhes.`,
                 city: location,
                 state,
-                sourceUrl: `https://br.indeed.com/viewjob?jk=${id}`,
+                sourceUrl,
                 categories: [category],
                 locations: [location],
-              });
+              };
+
+              // Enriquecer com LLM
+              if (jobData.company) {
+                jobData = await this.enrichJobDataWithLLM(jobData as Partial<ScrapedJob> & { company: string });
+              }
+
+              // Extrair logo
+              jobData.logoUrl = await this.extractCompanyLogo(company, jobData.website);
+
+              jobs.push(jobData as ScrapedJob);
             }
           } catch (err) {
             // Silent fail per location
@@ -174,8 +289,10 @@ class JobScraper {
               const titleMatch = titleMatches[i]?.match(/>([^<]+)<\/h2>$/);
               const title = titleMatch ? titleMatch[1].trim() : category;
               const state = CITY_STATE_MAP[location] || "SP";
+              const sourceUrl = `https://www.catho.com.br${path}`;
 
-              jobs.push({
+              // Enriquecer com dados faltantes
+              let jobData: Partial<ScrapedJob> = {
                 externalId: id,
                 source: "catho",
                 title,
@@ -183,10 +300,22 @@ class JobScraper {
                 description: `Vaga de ${title} em ${location}. Encontrada no Catho. Clique para ver mais detalhes.`,
                 city: location,
                 state,
-                sourceUrl: `https://www.catho.com.br${path}`,
+                sourceUrl,
                 categories: [category],
                 locations: [location],
-              });
+              };
+
+              // Enriquecer com LLM
+              if (jobData.company) {
+                jobData = await this.enrichJobDataWithLLM(jobData as Partial<ScrapedJob> & { company: string });
+              }
+
+              // Extrair logo
+              if (jobData.company) {
+                jobData.logoUrl = await this.extractCompanyLogo(jobData.company, jobData.website);
+              }
+
+              jobs.push(jobData as ScrapedJob);
             }
           } catch (err) {
             // Silent fail per location
@@ -235,7 +364,8 @@ Responda com um array JSON com exatamente 5 objetos, cada um com os campos:
 - phone: string (telefone fictício mas realista)
 - website: string (site fictício mas realista)
 - address: string (endereço fictício mas realista)
-- category: string (uma das categorias fornecidas)`,
+- category: string (uma das categorias fornecidas)
+- logoUrl: string (URL de um favicon ou logo realista da empresa)`,
           },
         ],
         response_format: {
@@ -261,8 +391,9 @@ Responda com um array JSON com exatamente 5 objetos, cada um com os campos:
                       website: { type: "string" },
                       address: { type: "string" },
                       category: { type: "string" },
+                      logoUrl: { type: "string" },
                     },
-                    required: ["title", "company", "description", "city", "state", "email", "phone", "website", "address", "category"],
+                    required: ["title", "company", "description", "city", "state", "email", "phone", "website", "address", "category", "logoUrl"],
                     additionalProperties: false,
                   },
                 },
@@ -275,7 +406,7 @@ Responda com um array JSON com exatamente 5 objetos, cada um com os campos:
       });
 
       const rawContent = response.choices[0]?.message?.content;
-      const content = typeof rawContent === 'string' ? rawContent : null;
+      const content = typeof rawContent === "string" ? rawContent : null;
       if (!content) return [];
 
       const parsed = JSON.parse(content);
@@ -291,7 +422,8 @@ Responda com um array JSON com exatamente 5 objetos, cada um com os campos:
         phone: job.phone,
         website: job.website,
         address: job.address,
-        sourceUrl: job.website || "",
+        logoUrl: job.logoUrl,
+        sourceUrl: (job.website as string) || "https://redetea.com.br",
         categories: [job.category],
         locations: [job.city],
       }));

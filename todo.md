@@ -110,3 +110,10 @@
 - [x] Criar README com instruções de instalação (DreamHost e Cloudways)
 - [x] Documentar como obter Application Password do WordPress
 - [x] Criar guia de troubleshooting
+
+## Melhorias de Extração de Dados (solicitado pelo usuário)
+- [x] Melhorar extração de logo da empresa no scraper (Indeed, Catho, LLM) — usando favicon do Google
+- [x] Melhorar extração de e-mail de contato da empresa — via LLM enrichment
+- [x] Melhorar extração de telefone de contato — via LLM enrichment
+- [x] Melhorar extração de site da empresa — via LLM enrichment
+- [x] Usar LLM para enriquecer campos faltantes (logo via domínio, site via nome da empresa)
