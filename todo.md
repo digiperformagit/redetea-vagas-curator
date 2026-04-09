@@ -107,6 +107,6 @@
 - [x] Mensagens de erro específicas (credenciais não configuradas, duplicata, etc.)
 
 ## Documentação
-- [ ] Criar README com instruções de instalação
-- [ ] Documentar como obter Application Password do WordPress
-- [ ] Criar guia de troubleshooting
+- [x] Criar README com instruções de instalação (DreamHost e Cloudways)
+- [x] Documentar como obter Application Password do WordPress
+- [x] Criar guia de troubleshooting
