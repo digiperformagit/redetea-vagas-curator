@@ -162,6 +162,34 @@ class WordPressClient {
   }
 
   /**
+   * Get all posts (jobs) with pagination
+   */
+  async getAllPosts(page: number = 1, perPage: number = 20): Promise<{ posts: any[]; total: number; pages: number }> {
+    try {
+      const response = await this.client.get("/posts", {
+        params: {
+          page,
+          per_page: perPage,
+          orderby: "date",
+          order: "desc",
+        },
+      });
+
+      const total = parseInt(response.headers["x-wp-total"] || "0", 10);
+      const pages = parseInt(response.headers["x-wp-totalpages"] || "0", 10);
+
+      return {
+        posts: response.data,
+        total,
+        pages,
+      };
+    } catch (error) {
+      console.error("[WordPress] Failed to get all posts:", error);
+      return { posts: [], total: 0, pages: 0 };
+    }
+  }
+
+  /**
    * Delete a post
    */
   async deletePost(postId: number, force: boolean = true): Promise<boolean> {

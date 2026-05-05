@@ -309,4 +309,94 @@ export const jobsRouter = router({
       await deleteJob(input.id);
       return { success: true };
     }),
+
+  /**
+   * Deletar vaga do WordPress
+   */
+  deleteFromWordPress: protectedProcedure
+    .input(z.object({ postId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const wpCreds = await getWpCredentials(ctx.user.id);
+      if (!wpCreds) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "WordPress credentials not configured",
+        });
+      }
+
+      try {
+        const wpClient = new WordPressClient({
+          wpUrl: wpCreds.wpUrl,
+          wpUsername: wpCreds.wpUsername,
+          wpAppPassword: wpCreds.wpAppPassword,
+        });
+
+        const success = await wpClient.deletePost(input.postId, true);
+        if (!success) {
+          throw new Error("Failed to delete post from WordPress");
+        }
+
+        return { success: true, message: "Vaga removida do WordPress" };
+      } catch (error) {
+        console.error("[Jobs] Failed to delete from WordPress:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete from WordPress",
+        });
+      }
+    }),
+
+  /**
+   * Listar histórico de vagas publicadas no WordPress
+   */
+  history: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().default(1),
+        perPage: z.number().default(20),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const wpCreds = await getWpCredentials(ctx.user.id);
+      if (!wpCreds) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "WordPress credentials not configured",
+        });
+      }
+
+      try {
+        const wpClient = new WordPressClient({
+          wpUrl: wpCreds.wpUrl,
+          wpUsername: wpCreds.wpUsername,
+          wpAppPassword: wpCreds.wpAppPassword,
+        });
+
+        const result = await wpClient.getAllPosts(input.page, input.perPage);
+
+        const posts = result.posts.map((post: any) => ({
+          id: post.id,
+          title: post.title?.rendered || "",
+          content: post.content?.rendered || "",
+          link: post.link,
+          date: post.date,
+          modified: post.modified,
+          status: post.status,
+          meta: post.meta || {},
+        }));
+
+        return {
+          posts,
+          total: result.total,
+          pages: result.pages,
+          currentPage: input.page,
+        };
+      } catch (error) {
+        console.error("[Jobs] Failed to fetch history:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch history from WordPress",
+        });
+      }
+    }),
 });

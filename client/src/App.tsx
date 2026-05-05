@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Approvals from "./pages/Approvals";
 import Review from "./pages/Review";
 import Settings from "./pages/Settings";
+import History from "./pages/History";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/approvals" component={Approvals} />
         <Route path="/review/:id" component={Review} />
+        <Route path="/history" component={History} />
         <Route path="/settings" component={Settings} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />

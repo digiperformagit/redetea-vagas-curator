@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Search, CheckSquare, Settings, LogOut, Menu, X } from "lucide-react";
+import { Search, CheckSquare, Settings, LogOut, Menu, X, Clock } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -9,6 +9,7 @@ import { getLoginUrl } from "@/const";
 const navItems = [
   { href: "/", label: "Buscar Vagas", icon: Search },
   { href: "/approvals", label: "Aprovações", icon: CheckSquare },
+  { href: "/history", label: "Histórico", icon: Clock },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 

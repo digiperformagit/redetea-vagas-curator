@@ -117,3 +117,12 @@
 - [x] Melhorar extração de telefone de contato — via LLM enrichment
 - [x] Melhorar extração de site da empresa — via LLM enrichment
 - [x] Usar LLM para enriquecer campos faltantes (logo via domínio, site via nome da empresa)
+
+
+## Aba de Histórico (Nova Funcionalidade)
+- [x] Criar página History.tsx com listagem de vagas publicadas
+- [x] Implementar router tRPC para listar vagas do WordPress
+- [x] Adicionar link direto para editar/remover vaga do WordPress
+- [x] Adicionar paginação
+- [x] Integrar com AppLayout para navegação
+- [ ] Adicionar filtros por data, categoria e status (opção futura)
