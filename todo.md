@@ -125,4 +125,4 @@
 - [x] Adicionar link direto para editar/remover vaga do WordPress
 - [x] Adicionar paginação
 - [x] Integrar com AppLayout para navegação
-- [ ] Adicionar filtros por data, categoria e status (opção futura)
+- [ ] Adicionar filtros por data, categoria e status (opção futura — não crítico para MVP)
