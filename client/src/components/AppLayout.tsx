@@ -131,13 +131,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-t border-slate-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm">
-              {user?.name?.[0]?.toUpperCase() || "U"}
+              {(user as any)?.username?.[0]?.toUpperCase() || "U"}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-900 truncate">
-                {user?.name || "Usuário"}
+                {(user as any)?.username || "Usuário"}
               </p>
-              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+              <p className="text-xs text-slate-500 truncate">{(user as any)?.email || ""}</p>
             </div>
           </div>
           <button

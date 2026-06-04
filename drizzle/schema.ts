@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -67,3 +67,16 @@ export const wpCredentials = mysqlTable("wpCredentials", {
 
 export type WpCredential = typeof wpCredentials.$inferSelect;
 export type InsertWpCredential = typeof wpCredentials.$inferInsert;
+
+export const simpleAuthUsers = mysqlTable("simple_auth_users", {
+  id: int("id").autoincrement().primaryKey(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SimpleAuthUser = typeof simpleAuthUsers.$inferSelect;
+export type InsertSimpleAuthUser = typeof simpleAuthUsers.$inferInsert;
