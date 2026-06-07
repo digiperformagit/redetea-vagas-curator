@@ -47,9 +47,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </p>
           <Button
             className="w-full h-12 text-base"
-            onClick={() => window.location.href = getLoginUrl()}
+            onClick={() => window.location.href = '/login'}
           >
-            Entrar com Manus
+            Entrar
           </Button>
         </div>
       </div>
