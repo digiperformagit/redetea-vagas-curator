@@ -27,7 +27,41 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+async function seedAdminUser() {
+  try {
+    const { getDb } = await import("../db");
+    const { simpleAuthUsers } = await import("../../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    const crypto = await import("crypto");
+    
+    const db = await getDb();
+    if (!db) return;
+    
+    const adminExists = await db
+      .select()
+      .from(simpleAuthUsers)
+      .where(eq(simpleAuthUsers.username, "admin"))
+      .limit(1);
+    
+    if (adminExists.length === 0) {
+      const hashedPassword = crypto.createHash("sha256").update("admin123").digest("hex");
+      await db.insert(simpleAuthUsers).values({
+        username: "admin",
+        password: hashedPassword,
+        email: "admin@redetea.com",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      console.log("[Seed] Admin user created successfully");
+    }
+  } catch (error) {
+    console.error("[Seed] Failed to seed admin user:", error);
+  }
+}
+
 async function startServer() {
+  await seedAdminUser();
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

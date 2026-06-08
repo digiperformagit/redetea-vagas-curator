@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO simple_auth_users (username, password, email, is_active, createdAt, updatedAt) VALUES ('admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'admin@redetea.com', 1, NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 49hC5D7VRy9HQ5B.ca8df2f5a846 --database dmmCtJ59JM8ujaSX4EqLob --execute INSERT INTO simple_auth_users (username, password, email, is_active, createdAt, updatedAt) VALUES ('admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'admin@redetea.com', 1, NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1040
+}

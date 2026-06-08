@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM simple_auth_users WHERE username = 'admin'; INSERT INTO simple_auth_users (username, password, email, is_active, createdAt, updatedAt) VALUES ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin@redetea.com', 1, NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 49hC5D7VRy9HQ5B.ca8df2f5a846 --database dmmCtJ59JM8ujaSX4EqLob --execute DELETE FROM simple_auth_users WHERE username = 'admin'; INSERT INTO simple_auth_users (username, password, email, is_active, createdAt, updatedAt) VALUES ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin@redetea.com', 1, NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 303
+}
