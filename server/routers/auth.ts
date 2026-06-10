@@ -9,6 +9,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { parse as parseCookies } from "cookie";
 import { sql } from "drizzle-orm";
+import { sdk } from "../_core/sdk";
 
 // Utility to parse cookie header string
 function parseCookieHeader(cookieStr: string): Record<string, string> {
@@ -38,9 +39,16 @@ export const authRouter = router({
 
       console.log("[Auth] Login successful for admin");
       
-      // Create session token
-      const sessionToken = crypto.randomBytes(32).toString("hex");
-      console.log("[Auth] Created session token:", sessionToken);
+      // Create a proper JWT session token
+      const sessionToken = await sdk.signSession(
+        {
+          openId: "admin-local",
+          appId: "local-app",
+          name: "admin",
+        },
+        { expiresInMs: 7 * 24 * 60 * 60 * 1000 } // 7 days
+      );
+      console.log("[Auth] Created JWT session token");
       
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
@@ -63,21 +71,26 @@ export const authRouter = router({
   }),
 
   me: publicProcedure.query(async ({ ctx }) => {
-    // Parse cookies from the Cookie header
     const cookieHeader = ctx.req.headers.cookie;
+    console.log("[Auth.me] Cookie header:", cookieHeader ? "present" : "missing");
+    
     if (!cookieHeader) {
+      console.log("[Auth.me] No cookie header, returning null");
       return null;
     }
     
     const cookies = parseCookies(cookieHeader);
+    console.log("[Auth.me] Parsed cookies:", Object.keys(cookies));
+    
     const sessionToken = cookies[COOKIE_NAME];
+    console.log("[Auth.me] Session token:", sessionToken ? "found" : "not found", "COOKIE_NAME:", COOKIE_NAME);
     
     if (!sessionToken) {
+      console.log("[Auth.me] No session token, returning null");
       return null;
     }
     
-    // For now, just return a generic authenticated user if cookie exists
-    // This is a temporary solution to get login working
+    console.log("[Auth.me] Returning authenticated user");
     return {
       id: 1,
       username: "admin",
