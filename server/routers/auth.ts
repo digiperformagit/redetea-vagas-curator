@@ -56,16 +56,15 @@ export const authRouter = router({
   }),
 
   me: publicProcedure.query(async ({ ctx }) => {
-    // For simple auth, we check if there's a valid session in the context
-    // The context is populated by createContext which checks the cookie
-    // For now, we'll return a minimal user object if a session cookie exists
-    const db = await getDb();
-    if (!db || !ctx.req.cookies || !ctx.req.cookies[COOKIE_NAME]) {
+    // Check if there's a session cookie
+    const sessionToken = (ctx.req as any).cookies?.[COOKIE_NAME];
+    
+    if (!sessionToken) {
       return null;
     }
     
-    // In a real app, you'd validate the session token against a sessions table
-    // For now, we'll just return a basic user object to indicate authenticated state
+    // Return a basic user object to indicate authenticated state
+    // In production, you'd validate the token against a sessions table
     return {
       id: 1,
       username: "admin",
