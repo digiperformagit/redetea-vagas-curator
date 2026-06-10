@@ -27,6 +27,23 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+async function runMigrations() {
+  try {
+    console.log("[Migrations] Running database migrations...");
+    const { migrate } = await import("drizzle-orm/node-postgres/migrator");
+    const { getDb } = await import("../db");
+    const db = await getDb();
+    if (!db) {
+      console.log("[Migrations] Database not available, skipping migrations");
+      return;
+    }
+    await migrate(db, { migrationsFolder: "./drizzle" });
+    console.log("[Migrations] Migrations completed successfully");
+  } catch (error) {
+    console.error("[Migrations] Failed to run migrations:", error);
+  }
+}
+
 async function seedAdminUser() {
   try {
     const { getDb } = await import("../db");
@@ -61,6 +78,7 @@ async function seedAdminUser() {
 }
 
 async function startServer() {
+  await runMigrations();
   await seedAdminUser();
   const app = express();
   const server = createServer(app);
