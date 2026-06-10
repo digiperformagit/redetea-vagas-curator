@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
@@ -16,7 +16,7 @@ export const users = pgTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: pgEnum("role", ["user", "admin"]),
+  role: varchar("role", { length: 20 }).notNull().default("user"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -42,7 +42,7 @@ export const jobs = pgTable("jobs", {
   logoUrl: varchar("logoUrl", { length: 255 }),
   categories: text("categories"), // JSON array
   locations: text("locations"), // JSON array
-  status: pgEnum("status", ["pending", "approved", "rejected", "published"]),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, approved, rejected, published
   wpPostId: serial("wpPostId"),
   sourceUrl: varchar("sourceUrl", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
