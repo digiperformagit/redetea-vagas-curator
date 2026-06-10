@@ -51,11 +51,14 @@ export const authRouter = router({
       
       try {
         const { sessions } = await import("../../drizzle/schema");
+        const userId = typeof user[0].id === 'string' ? parseInt(user[0].id, 10) : user[0].id;
+        console.log("[Auth] Creating session for userId:", userId, "type:", typeof userId);
         await db.insert(sessions).values({
           token: sessionToken,
-          userId: user[0].id,
+          userId: userId,
           expiresAt,
         });
+        console.log("[Auth] Session created successfully");
       } catch (error) {
         console.error("[Auth] Error creating session:", error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create session" });
