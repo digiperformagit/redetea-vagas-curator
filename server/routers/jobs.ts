@@ -197,7 +197,7 @@ export const jobsRouter = router({
       }
 
       // Obter credenciais do WordPress
-      const wpCreds = await getWpCredentials(ctx.user.id);
+      const wpCreds = await getWpCredentials(Number(ctx.user.id));
       if (!wpCreds) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
@@ -244,10 +244,10 @@ export const jobsRouter = router({
             city: job.city || undefined,
             state: job.state || undefined,
             logoUrl: job.logoUrl || undefined,
-            categories: job.categories ? JSON.parse(job.categories) : [],
-            locations: job.locations ? JSON.parse(job.locations) : [],
-            source: job.source,
-            externalId: job.externalId || undefined,
+            categories: job.categories ? JSON.parse(job.categories as string) : [],
+            locations: job.locations ? JSON.parse(job.locations as string) : [],
+            source: job.source as string,
+            externalId: (job.externalId || undefined) as string | undefined,
           },
         });
 
@@ -316,7 +316,7 @@ export const jobsRouter = router({
   deleteFromWordPress: protectedProcedure
     .input(z.object({ postId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const wpCreds = await getWpCredentials(ctx.user.id);
+      const wpCreds = await getWpCredentials(Number(ctx.user.id));
       if (!wpCreds) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
@@ -357,7 +357,7 @@ export const jobsRouter = router({
       })
     )
     .query(async ({ input, ctx }) => {
-      const wpCreds = await getWpCredentials(ctx.user.id);
+      const wpCreds = await getWpCredentials(Number(ctx.user.id));
       if (!wpCreds) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",

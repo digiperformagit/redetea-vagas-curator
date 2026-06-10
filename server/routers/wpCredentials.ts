@@ -39,11 +39,11 @@ export const wpCredentialsRouter = router({
         }
 
         // Salvar credenciais
-        const creds = await setWpCredentials(ctx.user.id, {
+        const creds = await setWpCredentials(Number(ctx.user.id), {
           wpUrl: input.wpUrl,
           wpUsername: input.wpUsername,
           wpAppPassword: input.wpAppPassword,
-          isActive: 1,
+          isActive: true,
           lastTestedAt: new Date(),
         });
 
@@ -65,7 +65,7 @@ export const wpCredentialsRouter = router({
    * Obter credenciais (sem password)
    */
   get: protectedProcedure.query(async ({ ctx }) => {
-    const creds = await getWpCredentials(ctx.user.id);
+    const creds = await getWpCredentials(Number(ctx.user.id));
     if (!creds) {
       return null;
     }
@@ -75,7 +75,7 @@ export const wpCredentialsRouter = router({
       id: creds.id,
       wpUrl: creds.wpUrl,
       wpUsername: creds.wpUsername,
-      isActive: creds.isActive === 1,
+      isActive: Boolean(creds.isActive),
       lastTestedAt: creds.lastTestedAt,
       createdAt: creds.createdAt,
       updatedAt: creds.updatedAt,
@@ -87,7 +87,7 @@ export const wpCredentialsRouter = router({
    */
   test: protectedProcedure.mutation(async ({ ctx }) => {
     try {
-      const creds = await getWpCredentials(ctx.user.id);
+      const creds = await getWpCredentials(Number(ctx.user.id));
       if (!creds) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -105,7 +105,7 @@ export const wpCredentialsRouter = router({
 
       if (isConnected) {
         // Atualizar lastTestedAt
-        await updateWpCredentialsLastTested(ctx.user.id);
+        await updateWpCredentialsLastTested(Number(ctx.user.id));
 
         return {
           success: true,
@@ -132,7 +132,7 @@ export const wpCredentialsRouter = router({
    */
   delete: protectedProcedure.mutation(async ({ ctx }) => {
     try {
-      await deleteWpCredentials(ctx.user.id);
+      await deleteWpCredentials(Number(ctx.user.id));
       return { success: true, message: "Credentials deleted" };
     } catch (error) {
       console.error("[WP Credentials] Delete failed:", error);

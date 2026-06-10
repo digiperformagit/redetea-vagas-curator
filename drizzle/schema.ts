@@ -1,32 +1,32 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
+import { pgTable, serial, varchar, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
  * Extend this file with additional tables as your product grows.
  * Columns use camelCase to match both database fields and generated types.
  */
-export const users = mysqlTable("users", {
+export const users = pgTable("users", {
   /**
    * Surrogate primary key. Auto-incremented numeric value managed by the database.
    * Use this for relations between tables.
    */
-  id: int("id").autoincrement().primaryKey(),
+  id: serial("id").primaryKey(),
   /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: pgEnum("role", ["user", "admin"]),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-export const jobs = mysqlTable("jobs", {
-  id: int("id").autoincrement().primaryKey(),
+export const jobs = pgTable("jobs", {
+  id: serial("id").primaryKey(),
   externalId: varchar("externalId", { length: 255 }),
   source: varchar("source", { length: 50 }).notNull(), // indeed, linkedin, glassdoor, catho
   title: varchar("title", { length: 255 }).notNull(),
@@ -42,40 +42,40 @@ export const jobs = mysqlTable("jobs", {
   logoUrl: varchar("logoUrl", { length: 255 }),
   categories: text("categories"), // JSON array
   locations: text("locations"), // JSON array
-  status: mysqlEnum("status", ["pending", "approved", "rejected", "published"]).default("pending").notNull(),
-  wpPostId: int("wpPostId"),
+  status: pgEnum("status", ["pending", "approved", "rejected", "published"]),
+  wpPostId: serial("wpPostId"),
   sourceUrl: varchar("sourceUrl", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   publishedAt: timestamp("publishedAt"),
 });
 
 export type Job = typeof jobs.$inferSelect;
 export type InsertJob = typeof jobs.$inferInsert;
 
-export const wpCredentials = mysqlTable("wpCredentials", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+export const wpCredentials = pgTable("wpCredentials", {
+  id: serial("id").primaryKey(),
+  userId: serial("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
   wpUrl: varchar("wpUrl", { length: 255 }).notNull(),
   wpUsername: varchar("wpUsername", { length: 255 }).notNull(),
   wpAppPassword: text("wpAppPassword").notNull(), // Encrypted
-  isActive: int("isActive").default(1).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
   lastTestedAt: timestamp("lastTestedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type WpCredential = typeof wpCredentials.$inferSelect;
 export type InsertWpCredential = typeof wpCredentials.$inferInsert;
 
-export const simpleAuthUsers = mysqlTable("simple_auth_users", {
-  id: int("id").autoincrement().primaryKey(),
+export const simpleAuthUsers = pgTable("simple_auth_users", {
+  id: serial("id").primaryKey(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type SimpleAuthUser = typeof simpleAuthUsers.$inferSelect;
