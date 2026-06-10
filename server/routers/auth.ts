@@ -31,13 +31,27 @@ export const authRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
 
+      console.log("[Auth] Login attempt for username:", input.username);
+      
       const user = await db
         .select()
         .from(simpleAuthUsers)
         .where(eq(simpleAuthUsers.username, input.username))
         .limit(1);
 
+      console.log("[Auth] User found:", user.length > 0);
+      
+      if (user.length > 0) {
+        const hashedInput = hashPassword(input.password);
+        const dbPassword = user[0].password;
+        console.log("[Auth] Password comparison:");
+        console.log("  Input hash:", hashedInput);
+        console.log("  DB hash:", dbPassword);
+        console.log("  Match:", hashedInput === dbPassword);
+      }
+
       if (!user.length || user[0].password !== hashPassword(input.password)) {
+        console.log("[Auth] Login failed - invalid credentials");
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid credentials" });
       }
 
