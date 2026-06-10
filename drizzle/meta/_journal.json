@@ -1,1 +1,20 @@
-{"version":"7","dialect":"postgresql","entries":[{"idx":0,"version":"7","when":1717939200000,"tag":"0000_create_tables","contents":""}]}
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1717939200000,
+      "tag": "0000_create_tables",
+      "contents": ""
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781112443312,
+      "tag": "0001_minor_reavers",
+      "breakpoints": true
+    }
+  ]
+}

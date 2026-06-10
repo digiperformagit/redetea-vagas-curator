@@ -80,3 +80,14 @@ export const simpleAuthUsers = pgTable("simple_auth_users", {
 
 export type SimpleAuthUser = typeof simpleAuthUsers.$inferSelect;
 export type InsertSimpleAuthUser = typeof simpleAuthUsers.$inferInsert;
+
+export const sessions = pgTable("sessions", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  userId: serial("userId").notNull().references(() => simpleAuthUsers.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Session = typeof sessions.$inferSelect;
+export type InsertSession = typeof sessions.$inferInsert;

@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { parse as parseCookies } from "cookie";
+import { sql } from "drizzle-orm";
 
 // Utility to parse cookie header string
 function parseCookieHeader(cookieStr: string): Record<string, string> {
@@ -44,8 +45,22 @@ export const authRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "User is inactive" });
       }
 
-      // Set session cookie
+      // Create session token and store in database
       const sessionToken = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      
+      try {
+        const { sessions } = await import("../../drizzle/schema");
+        await db.insert(sessions).values({
+          token: sessionToken,
+          userId: user[0].id,
+          expiresAt,
+        });
+      } catch (error) {
+        console.error("[Auth] Error creating session:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create session" });
+      }
+      
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
@@ -75,13 +90,52 @@ export const authRouter = router({
       return null;
     }
     
-    // Return a basic user object to indicate authenticated state
-    // In production, you'd validate the token against a sessions table
-    return {
-      id: 1,
-      username: "admin",
-      email: "admin@redetea.com",
-      isActive: true,
-    };
+    // Validate session token against database
+    const db = await getDb();
+    if (!db) {
+      return null;
+    }
+    
+    try {
+      const { sessions } = await import("../../drizzle/schema");
+      
+      const session = await db
+        .select()
+        .from(sessions)
+        .where(
+          sql`${sessions.token} = ${sessionToken} AND ${sessions.expiresAt} > now()`
+        )
+        .limit(1);
+      
+      if (!session.length) {
+        return null;
+      }
+      
+      // Get user info
+      const user = await db
+        .select()
+        .from(simpleAuthUsers)
+        .where(sql`${simpleAuthUsers.id} = ${session[0].userId}`)
+        .limit(1);
+      
+      if (!user.length) {
+        return null;
+      }
+      
+      const userData = user[0];
+      if (!userData.isActive) {
+        return null;
+      }
+      
+      return {
+        id: userData.id,
+        username: userData.username,
+        email: userData.email || "",
+        isActive: userData.isActive,
+      };
+    } catch (error) {
+      console.error("[Auth] Error validating session:", error);
+      return null;
+    }
   })
 });
