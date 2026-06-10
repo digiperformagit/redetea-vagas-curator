@@ -7,6 +7,12 @@ import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
+import { parse as parseCookies } from "cookie";
+
+// Utility to parse cookie header string
+function parseCookieHeader(cookieStr: string): Record<string, string> {
+  return parseCookies(cookieStr);
+}
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
@@ -56,8 +62,14 @@ export const authRouter = router({
   }),
 
   me: publicProcedure.query(async ({ ctx }) => {
-    // Check if there's a session cookie
-    const sessionToken = (ctx.req as any).cookies?.[COOKIE_NAME];
+    // Parse cookies from the Cookie header (req.cookies is not available without cookie-parser)
+    const cookieHeader = ctx.req.headers.cookie;
+    if (!cookieHeader) {
+      return null;
+    }
+    
+    const cookies = parseCookies(cookieHeader);
+    const sessionToken = cookies[COOKIE_NAME];
     
     if (!sessionToken) {
       return null;
