@@ -1,13 +1,10 @@
-CREATE TYPE "public"."role" AS ENUM('user', 'admin');
-CREATE TYPE "public"."status" AS ENUM('pending', 'approved', 'rejected', 'published');
-
 CREATE TABLE IF NOT EXISTS "public"."users" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"openId" varchar(64) NOT NULL UNIQUE,
 	"name" text,
 	"email" varchar(320),
 	"loginMethod" varchar(64),
-	"role" "public"."role" NOT NULL DEFAULT 'user',
+	"role" varchar(20) NOT NULL DEFAULT 'user',
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	"lastSignedIn" timestamp DEFAULT now() NOT NULL
@@ -30,7 +27,7 @@ CREATE TABLE IF NOT EXISTS "public"."jobs" (
 	"logoUrl" varchar(255),
 	"categories" text,
 	"locations" text,
-	"status" "public"."status" NOT NULL DEFAULT 'pending',
+	"status" varchar(20) NOT NULL DEFAULT 'pending',
 	"wpPostId" serial,
 	"sourceUrl" varchar(255),
 	"createdAt" timestamp DEFAULT now() NOT NULL,
@@ -60,3 +57,8 @@ CREATE TABLE IF NOT EXISTS "public"."simple_auth_users" (
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
+
+-- Insert admin user if it doesn't exist
+INSERT INTO "public"."simple_auth_users" ("username", "password", "email", "is_active", "createdAt", "updatedAt")
+VALUES ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin@redetea.com', true, now(), now())
+ON CONFLICT ("username") DO NOTHING;
