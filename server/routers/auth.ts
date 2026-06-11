@@ -11,9 +11,9 @@ import { parse as parseCookies } from "cookie";
 import { sql } from "drizzle-orm";
 
 // Simple in-memory session store
-const sessions = new Map<string, { username: string; expiresAt: number }>();
+export const sessions = new Map<string, { username: string; expiresAt: number }>();
 
-function createSession(username: string): string {
+export function createSession(username: string): string {
   const token = crypto.randomBytes(32).toString("hex");
   sessions.set(token, {
     username,
@@ -22,7 +22,7 @@ function createSession(username: string): string {
   return token;
 }
 
-function getSession(token: string): { username: string } | null {
+export function getSession(token: string): { username: string } | null {
   const session = sessions.get(token);
   if (!session) return null;
   if (Date.now() > session.expiresAt) {
@@ -86,23 +86,33 @@ export const authRouter = router({
 
   me: publicProcedure.query(async ({ ctx }) => {
     const cookieHeader = ctx.req.headers.cookie;
+    console.log("[Auth.me] Cookie header:", cookieHeader ? `present (${cookieHeader.length} chars)` : "MISSING");
+    console.log("[Auth.me] COOKIE_NAME:", COOKIE_NAME);
+    console.log("[Auth.me] Sessions count:", sessions.size);
     
     if (!cookieHeader) {
+      console.log("[Auth.me] No cookie header, returning null");
       return null;
     }
     
     const cookies = parseCookies(cookieHeader);
+    console.log("[Auth.me] Parsed cookies:", Object.keys(cookies));
     const sessionToken = cookies[COOKIE_NAME];
+    console.log("[Auth.me] Session token:", sessionToken ? `found (${sessionToken.substring(0, 10)}...)` : "NOT FOUND");
     
     if (!sessionToken) {
+      console.log("[Auth.me] No session token, returning null");
       return null;
     }
     
     const session = getSession(sessionToken);
+    console.log("[Auth.me] Session lookup:", session ? "FOUND" : "NOT FOUND");
     if (!session) {
+      console.log("[Auth.me] Session expired or invalid");
       return null;
     }
     
+    console.log("[Auth.me] Returning authenticated user:", session.username);
     return {
       id: 1,
       username: session.username,

@@ -260,7 +260,31 @@ class SDKServer {
     // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
+    
+    // First try to verify as JWT (for Manus OAuth)
+    let session = await this.verifySession(sessionCookie);
+    
+    // If JWT verification fails, try simple session token (for local auth)
+    if (!session && sessionCookie) {
+      try {
+        const { getSession } = await import("../routers/auth");
+        const simpleSession = getSession(sessionCookie);
+        if (simpleSession) {
+          // Return a dummy user for simple auth
+          return {
+            id: 1,
+            openId: "admin-local",
+            name: simpleSession.username,
+            email: "admin@redetea.com",
+            role: "admin" as const,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+        }
+      } catch (error) {
+        // Fall through to error
+      }
+    }
 
     if (!session) {
       throw ForbiddenError("Invalid session cookie");
