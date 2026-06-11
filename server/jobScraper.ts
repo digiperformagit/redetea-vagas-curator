@@ -35,23 +35,14 @@ class JobScraper {
     locations: JobLocation[]
   ): Promise<ScrapedJob[]> {
     const jobs: ScrapedJob[] = [];
+    console.log("[JobScraper] Starting search with categories:", categories, "locations:", locations);
 
-    // Tentar busca em fontes externas
-    const [indeedJobs, cathoJobs, llmJobs] = await Promise.allSettled([
-      this.searchIndeed(categories, locations),
-      this.searchCatho(categories, locations),
-      this.generateJobsWithLLM(categories, locations),
-    ]);
+    // Usar apenas LLM para gerar vagas (Indeed e Catho podem estar bloqueados em produção)
+    const llmJobs = await this.generateJobsWithLLM(categories, locations);
+    console.log("[JobScraper] LLM generated:", llmJobs.length, "jobs");
 
-    if (indeedJobs.status === "fulfilled") {
-      jobs.push(...indeedJobs.value);
-    }
-    if (cathoJobs.status === "fulfilled") {
-      jobs.push(...cathoJobs.value);
-    }
-    if (llmJobs.status === "fulfilled") {
-      jobs.push(...llmJobs.value);
-    }
+    jobs.push(...llmJobs);
+    console.log("[JobScraper] Total jobs found:", jobs.length);
 
     // Deduplicate by externalId
     const seen = new Set<string>();

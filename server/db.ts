@@ -1,15 +1,32 @@
 import { eq, and, inArray, desc, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+import { Pool } from "pg";
 import { InsertUser, users, jobs, wpCredentials, Job, InsertJob, WpCredential, InsertWpCredential } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: any = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      if (process.env.DATABASE_URL.startsWith("file:")) {
+        // SQLite for development
+        const dbPath = process.env.DATABASE_URL.replace("file:", "");
+        const sqlite = new Database(dbPath);
+        _db = drizzleSqlite(sqlite, { schema: { users, jobs, wpCredentials } });
+      } else {
+        // PostgreSQL for production
+        const pool = new Pool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        });
+        _db = drizzle(pool, { schema: { users, jobs, wpCredentials } });
+      }
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
