@@ -51,34 +51,11 @@ export const jobsRouter = router({
           validLocations as any
         );
 
-        // Salvar vagas no banco
-        const savedJobs = [];
-        for (const job of scrapedJobs) {
-          // Verificar se já existe
-          const existing = await getJobByExternalId(job.externalId, job.source);
-          if (!existing) {
-            const saved = await createJob({
-              externalId: job.externalId,
-              source: job.source,
-              title: job.title,
-              company: job.company,
-              description: job.description,
-              city: job.city,
-              state: job.state,
-              logoUrl: job.logoUrl,
-              categories: JSON.stringify(job.categories),
-              locations: JSON.stringify(job.locations),
-              sourceUrl: job.sourceUrl,
-              status: "pending",
-            });
-            savedJobs.push(saved);
-          }
-        }
-
+        // Retornar vagas diretamente (sem salvar no banco por enquanto)
         return {
           total: scrapedJobs.length,
-          saved: savedJobs.length,
-          jobs: savedJobs,
+          saved: scrapedJobs.length,
+          jobs: scrapedJobs,
         };
       } catch (error) {
         console.error("[Jobs] Search failed:", error);
