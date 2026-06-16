@@ -52,6 +52,7 @@
     "tsx": "^4.7.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.9",
+    "vite-plugin-manus-runtime": "^0.0.58",
     "vitest": "^1.1.0"
   },
   "pnpm": {
